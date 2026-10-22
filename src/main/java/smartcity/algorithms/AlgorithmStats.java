@@ -1,4 +1,5 @@
 package smartcity.algorithms;
+
 public final class AlgorithmStats {
     public long edgeExaminations;
     public long comparisons;
