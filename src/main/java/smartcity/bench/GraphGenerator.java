@@ -1,115 +1,240 @@
 package smartcity.bench;
+
 import smartcity.graph.WeightedGraph;
+
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
+
 public final class GraphGenerator {
     private GraphGenerator() {}
-    public static WeightedGraph connectedUndirected(int vertices, int edges, long seed) {
+
+    public static WeightedGraph connectedUndirected(
+            int vertices, int edges, long seed
+    ) {
         validate(vertices, edges);
-        if (edges < Math.max(0, vertices - 1)) throw new IllegalArgumentException("Connected
-                graph needs at least V-1 edges");
-        long maximum = (long) vertices * (vertices - 1) / 2;
-        if (edges > maximum) throw new IllegalArgumentException("Too many unique undirected edges
-                ");
-                Random random = new Random(seed);
-        WeightedGraph graph = new WeightedGraph(vertices, false);
-        Set<Long> pairs = new HashSet<>();
-        for (int v = 1; v < vertices; v++) addUndirected(graph, pairs, v - 1, v, random);
-        while (pairs.size() < edges) {
-            int a = random.nextInt(vertices);
-            int b = random.nextInt(vertices);
-            if (a != b) addUndirected(graph, pairs, a, b, random);
+
+        long maxEdges = (long) vertices * (vertices - 1) / 2;
+        int minEdges = Math.max(0, vertices - 1);
+
+        if (edges < minEdges || edges > maxEdges) {
+            throw new IllegalArgumentException(
+                    "A connected undirected graph needs between V-1 and V*(V-1)/2 edges"
+            );
         }
+
+        Random random = new Random(seed);
+        WeightedGraph graph = new WeightedGraph(vertices, false);
+        Set<Long> usedEdges = new HashSet<>();
+
+        // Сначала создаём связный путь через все вершины.
+        for (int vertex = 1; vertex < vertices; vertex++) {
+            addUndirectedEdge(graph, usedEdges, vertex - 1, vertex, random);
+        }
+
+        // Добавляем случайные рёбра, пока не достигнем нужного количества.
+        while (usedEdges.size() < edges) {
+            int from = random.nextInt(vertices);
+            int to = random.nextInt(vertices);
+
+            if (from != to) {
+                addUndirectedEdge(graph, usedEdges, from, to, random);
+            }
+        }
+
         return graph;
     }
+
     public static WeightedGraph dag(int vertices, int edges, long seed) {
         validate(vertices, edges);
-        if (edges < Math.max(0, vertices - 1)) throw new IllegalArgumentException("This DAG
-                generator needs at least V-1 edges");
-        long maximum = (long) vertices * (vertices - 1) / 2;
-        if (edges > maximum) throw new IllegalArgumentException("DAG cannot contain that many
-                unique edges");
-                Random random = new Random(seed);
-        WeightedGraph graph = new WeightedGraph(vertices, true);
-        Set<Long> pairs = new HashSet<>();
-        for (int v = 1; v < vertices; v++) addDirected(graph, pairs, v - 1, v);
-        while (pairs.size() < edges) {
-            int from = random.nextInt(vertices);
-            int to = random.nextInt(vertices);
-            if (from < to) addDirected(graph, pairs, from, to);
+
+        long maxEdges = (long) vertices * (vertices - 1) / 2;
+        int minEdges = Math.max(0, vertices - 1);
+
+        if (edges < minEdges || edges > maxEdges) {
+            throw new IllegalArgumentException(
+                    "A DAG needs between V-1 and V*(V-1)/2 edges"
+            );
         }
-        return graph;
-    }
-    public static WeightedGraph cyclicDirected(int vertices, int edges, long seed) {
-        validate(vertices, edges);
-        if (vertices == 0 && edges != 0) throw new IllegalArgumentException("Empty graph cannot
-                have edges");
-        if (vertices > 1 && edges < vertices) throw new IllegalArgumentException("Cyclic
-                construction needs at least V edges");
-        if (vertices == 1 && edges == 0) throw new IllegalArgumentException("A cyclic one-vertex
-                graph needs a self-loop");
-        long maximum = vertices <= 1 ? 1 : (long) (vertices - 1) * (vertices - 1) + (vertices ==
-                2 ? 1 : 0);
-        if (edges > maximum) throw new IllegalArgumentException("Too many unique directed edges
-        for this construction");
+
         Random random = new Random(seed);
         WeightedGraph graph = new WeightedGraph(vertices, true);
-        Set<Long> pairs = new HashSet<>();
-        if (vertices == 1) {
-            if (edges == 1) addDirected(graph, pairs, 0, 0);
-            else if (edges != 0) throw new IllegalArgumentException("A one-vertex graph supports
-                    at most one unique edge");
-            return graph;
+        Set<Long> usedEdges = new HashSet<>();
+
+        // Рёбра идут только от меньшей вершины к большей.
+        // Поэтому цикл в графе образоваться не может.
+        for (int vertex = 1; vertex < vertices; vertex++) {
+            addDirectedEdge(graph, usedEdges, vertex - 1, vertex);
         }
-        for (int v = 1; v < vertices; v++) addDirected(graph, pairs, v - 1, v);
-        addDirected(graph, pairs, vertices - 1, vertices - 2);
-        while (pairs.size() < edges) {
+
+        while (usedEdges.size() < edges) {
             int from = random.nextInt(vertices);
             int to = random.nextInt(vertices);
-            if (from != to && to != 0) addDirected(graph, pairs, from, to);
+
+            if (from < to) {
+                addDirectedEdge(graph, usedEdges, from, to);
+            }
         }
+
         return graph;
     }
-    public static WeightedGraph stronglyConnectedDirected(int vertices, int edges, long seed) {
+
+    public static WeightedGraph cyclicDirected(
+            int vertices, int edges, long seed
+    ) {
         validate(vertices, edges);
-        if (vertices > 1 && edges < vertices) throw new IllegalArgumentException("Ring requires
-                at least V directed edges");
-        long maximum = (long) vertices * Math.max(0, vertices - 1);
-        if (edges > maximum) throw new IllegalArgumentException("Too many unique directed edges")
-                ;
+
+        if (vertices == 0) {
+            throw new IllegalArgumentException(
+                    "A cyclic graph needs at least one vertex"
+            );
+        }
+
+        long maxEdges = (long) vertices * (vertices - 1);
+
+        if (vertices == 1) {
+            if (edges != 1) {
+                throw new IllegalArgumentException(
+                        "A one-vertex cyclic graph needs exactly one self-loop"
+                );
+            }
+
+            WeightedGraph graph = new WeightedGraph(1, true);
+            graph.addEdge(0, 0, 1);
+            return graph;
+        }
+
+        if (edges < vertices || edges > maxEdges) {
+            throw new IllegalArgumentException(
+                    "A cyclic directed graph needs between V and V*(V-1) edges"
+            );
+        }
+
         Random random = new Random(seed);
         WeightedGraph graph = new WeightedGraph(vertices, true);
-        Set<Long> pairs = new HashSet<>();
-        if (vertices == 1) {
-            if (edges == 1) addDirected(graph, pairs, 0, 0);
-            else if (edges != 0) throw new IllegalArgumentException("A one-vertex graph supports
-                    at most one unique edge");
-            return graph;
+        Set<Long> usedEdges = new HashSet<>();
+
+        // Создаём цикл: 0 -> 1 -> ... -> V-1 -> 0.
+        for (int vertex = 0; vertex < vertices; vertex++) {
+            int next = (vertex + 1) % vertices;
+            addDirectedEdge(graph, usedEdges, vertex, next);
         }
-        for (int v = 0; v < vertices; v++) addDirected(graph, pairs, v, (v + 1) % vertices);
-        while (pairs.size() < edges) {
-            int from = random.nextInt(vertices);
-            int to = random.nextInt(vertices);
-            if (from != to) addDirected(graph, pairs, from, to);
-        }
+
+        addRandomDirectedEdges(graph, usedEdges, vertices, edges, random);
         return graph;
     }
-    private static void addUndirected(WeightedGraph graph, Set<Long> pairs, int a, int b, Random
-            random) {
-        int lo = Math.min(a, b);
-        int hi = Math.max(a, b);
-        long key = pairKey(lo, hi);
-        if (pairs.add(key)) graph.addEdge(lo, hi, 1 + random.nextInt(10_000));
+
+    public static WeightedGraph stronglyConnectedDirected(
+            int vertices, int edges, long seed
+    ) {
+        validate(vertices, edges);
+
+        long maxEdges = (long) vertices * (vertices - 1);
+
+        if (vertices == 0) {
+            if (edges != 0) {
+                throw new IllegalArgumentException(
+                        "An empty graph cannot contain edges"
+                );
+            }
+            return new WeightedGraph(0, true);
+        }
+
+        if (vertices == 1) {
+            if (edges > 1) {
+                throw new IllegalArgumentException(
+                        "A one-vertex graph can have at most one unique edge"
+                );
+            }
+
+            WeightedGraph graph = new WeightedGraph(1, true);
+            if (edges == 1) {
+                graph.addEdge(0, 0, 1);
+            }
+            return graph;
+        }
+
+        if (edges < vertices || edges > maxEdges) {
+            throw new IllegalArgumentException(
+                    "A strongly connected graph needs between V and V*(V-1) edges"
+            );
+        }
+
+        Random random = new Random(seed);
+        WeightedGraph graph = new WeightedGraph(vertices, true);
+        Set<Long> usedEdges = new HashSet<>();
+
+        // Направленный цикл обеспечивает достижимость всех вершин.
+        for (int vertex = 0; vertex < vertices; vertex++) {
+            int next = (vertex + 1) % vertices;
+            addDirectedEdge(graph, usedEdges, vertex, next);
+        }
+
+        addRandomDirectedEdges(graph, usedEdges, vertices, edges, random);
+        return graph;
     }
-    private static void addDirected(WeightedGraph graph, Set<Long> pairs, int from, int to) {
-        if (pairs.add(pairKey(from, to))) graph.addEdge(from, to, 1);
+
+    private static void addRandomDirectedEdges(
+            WeightedGraph graph,
+            Set<Long> usedEdges,
+            int vertices,
+            int targetEdges,
+            Random random
+    ) {
+        while (usedEdges.size() < targetEdges) {
+            int from = random.nextInt(vertices);
+            int to = random.nextInt(vertices);
+
+            if (from != to) {
+                addDirectedEdge(graph, usedEdges, from, to);
+            }
+        }
     }
-    private static long pairKey(int from, int to) { return ((long) from << 32) ^ (to & 0
-        xffffffffL); }
+
+    private static void addUndirectedEdge(
+            WeightedGraph graph,
+            Set<Long> usedEdges,
+            int first,
+            int second,
+            Random random
+    ) {
+        int from = Math.min(first, second);
+        int to = Math.max(first, second);
+        long key = pairKey(from, to);
+
+        if (usedEdges.add(key)) {
+            graph.addEdge(from, to, 1 + random.nextInt(10_000));
+        }
+    }
+
+    private static void addDirectedEdge(
+            WeightedGraph graph,
+            Set<Long> usedEdges,
+            int from,
+            int to
+    ) {
+        long key = pairKey(from, to);
+
+        if (usedEdges.add(key)) {
+            graph.addEdge(from, to, 1);
+        }
+    }
+
+    private static long pairKey(int from, int to) {
+        return ((long) from << 32) | (to & 0xffffffffL);
+    }
+
     private static void validate(int vertices, int edges) {
-        if (vertices < 0 || edges < 0) throw new IllegalArgumentException("V and E must be nonnegative");
-        if (vertices == 0 && edges != 0) throw new IllegalArgumentException("Empty graph cannot
-                have edges");
+        if (vertices < 0 || edges < 0) {
+            throw new IllegalArgumentException(
+                    "The number of vertices and edges cannot be negative"
+            );
+        }
+
+        if (vertices == 0 && edges != 0) {
+            throw new IllegalArgumentException(
+                    "An empty graph cannot contain edges"
+            );
+        }
     }
 }

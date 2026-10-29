@@ -5,8 +5,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 public final class TopologicalSort {
-    public record Result(List<Integer> order, boolean acyclic, AlgorithmStats stats) {}
-    private TopologicalSort() {}
+    public record Result(List<Integer> order, boolean acyclic, AlgorithmStats stats) {
+    }
+
+    private TopologicalSort() {
+    }
+
     public static Result sort(WeightedGraph graph) {
         requireDirected(graph);
         int n = graph.vertexCount();
@@ -31,8 +35,12 @@ public final class TopologicalSort {
         }
         return new Result(List.copyOf(order), order.size() == n, stats);
     }
+
     private static void requireDirected(WeightedGraph graph) {
-        if (!graph.isDirected()) throw new IllegalArgumentException("Topological ordering requires a
-                directed graph");
+        if (!graph.isDirected()) {
+            throw new IllegalArgumentException(
+                    "Topological ordering requires a directed graph"
+            );
+        }
     }
 }

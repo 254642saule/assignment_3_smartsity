@@ -20,11 +20,16 @@ public final class Dijkstra {
     }
     private Dijkstra() {}
     public static Result shortestPaths(WeightedGraph graph, int source) {
-        if (source < 0 || source >= graph.vertexCount()) throw new IndexOutOfBoundsException("Invalid
-                source vertex");
+        if (source < 0 || source >= graph.vertexCount()) {
+            throw new IndexOutOfBoundsException("Invalid source vertex");
+        }
+
         for (WeightedGraph.Edge edge : graph.edges()) {
-            if (edge.weight() < 0) throw new IllegalArgumentException("Dijkstra requires non-negative edge
-                    weights");
+            if (edge.weight() < 0) {
+                throw new IllegalArgumentException(
+                        "Dijkstra requires non-negative edge weights"
+                );
+            }
         }
         int n = graph.vertexCount();
         long[] distance = new long[n];
