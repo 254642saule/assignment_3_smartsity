@@ -1,5 +1,4 @@
 package smartcity.algorithms;
-// AI-assisted implementation; review and adapt before submission.
 import smartcity.graph.WeightedGraph;
 import java.util.ArrayList;
 import java.util.Arrays;
