@@ -61,18 +61,6 @@ Graph generation is reproducible. The base seed is `20261015`; the generator use
 
 Each graph is created before timing begins. Every algorithm has 10 warm-up runs followed by five measured runs. Each measured run uses `System.nanoTime()`; the CSV reports the arithmetic mean. Operation counts are recorded alongside the timings. Because this is a microbenchmark, absolute times depend on the machine, Java runtime, and system load.
 
-## Sample Run
-
-The demo graph produced the following output:
-
-```text
-Smart City Infrastructure — sample run
-Kruskal MST: weight=11, connected=true
-Prim MST:    weight=11, connected=true
-Dijkstra distances from district 0: [0, 3, 2, 8, 11]
-Path 0 -> 4: [0, 2, 1, 3, 4]
-Run ./run.sh benchmark to create measurements and plots.
-```
 
 ## Results
 
