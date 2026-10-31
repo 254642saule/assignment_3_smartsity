@@ -102,11 +102,11 @@ The following values are the actual results from a benchmark run with OpenJDK 17
 
 ### Execution time vs. number of vertices
 
-![Benchmark chart: execution time vs. number of vertices](assignment-3-smart-city/results/plots/time-vs-vertices.png)
+![Benchmark chart: execution time vs. number of vertices](results/plots/time-vs-vertices.png)
 
 ### Execution time vs. number of edges
 
-![Benchmark chart: execution time vs. number of edges](assignment-3-smart-city/results/plots/time-vs-edges.png)
+![Benchmark chart: execution time vs. number of edges](results/plots/time-vs-edges.png)
 
 The charts use a logarithmic horizontal axis so the small, medium, and large graph sizes can be compared in one view.
 
@@ -154,7 +154,7 @@ PASS: Generated cyclic graph is detected at V=1000
 All 24 checks passed.
 ```
 
-</details>
+</details>    
 
 ## Comparison and Discussion
 
